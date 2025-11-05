@@ -20,36 +20,36 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleDataNotFound(DataNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>("404", e.getMessage(), null));
+                .body(new ApiResponse<>("404", e.getMessage(), null, null, null, null));
     }
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiResponse<?>> handleBadRequest(BadRequestException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>("400", e.getMessage(), null));
+                .body(new ApiResponse<>("400", e.getMessage(), null, null, null, null));
     }
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiResponse<?>> handleConflict(ConflictException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiResponse<>("409", e.getMessage(), null));
+                .body(new ApiResponse<>("409", e.getMessage(), null, null, null, null));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<?>> handleUnauthorized(UnauthorizedException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse<>("401", e.getMessage(), null));
+                .body(new ApiResponse<>("401", e.getMessage(), null, null, null, null));
     }
 
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ApiResponse<?>> handleForbidden(ForbiddenException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ApiResponse<>("403", e.getMessage(), null));
+                .body(new ApiResponse<>("403", e.getMessage(), null, null, null, null));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<?>> handleAll(Exception e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>("500", "Internal Server Error: " + e.getMessage(), null));
+                .body(new ApiResponse<>("500", "Internal Server Error: " + e.getMessage(), null, null, null, null));
     }
 }

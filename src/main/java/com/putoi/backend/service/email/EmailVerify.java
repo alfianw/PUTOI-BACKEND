@@ -32,7 +32,7 @@ public class EmailVerify {
                 .orElseThrow(()-> new DataNotFoundException("Email tidak ditemukan: " + email));
         
         if (emailOTP.isEmailVerified()){
-            return new ApiResponse<>("00", "Email sudah diverifikasi", null);
+            return new ApiResponse<>("00", "Email sudah diverifikasi", null, null, null, null);
         }
         
         if(!otp.equals(emailOTP.getVerificationCode())){
@@ -44,7 +44,7 @@ public class EmailVerify {
         emailOTP.setVerificationExpiry(null);
         emailOTPRepositorry.save(emailOTP);
         
-        return new ApiResponse<>("00", "Email berhasil diverifikasi", null);
+        return new ApiResponse<>("00", "Email berhasil diverifikasi", null, null, null, null);
     }
     
     @Transactional
@@ -63,6 +63,6 @@ public class EmailVerify {
         
         emailService.sendVerificationEmail(emailOTP.getEmail(), otp);
         
-        return new ApiResponse<>("00", "Kode verifikasi baru telah dikirim ke email Anda", null);
+        return new ApiResponse<>("00", "Kode verifikasi baru telah dikirim ke email Anda", null, null, null, null);
     }
 }

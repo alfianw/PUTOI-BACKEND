@@ -7,6 +7,8 @@ package com.putoi.backend.service;
 import com.putoi.backend.dto.ApiResponse;
 import com.putoi.backend.dto.LoginRequest;
 import com.putoi.backend.dto.LoginResponse;
+import com.putoi.backend.dto.UserPaginationRequest;
+import com.putoi.backend.dto.UserPaginationResponse;
 import com.putoi.backend.dto.UserRequest;
 import com.putoi.backend.dto.UserResponse;
 import com.putoi.backend.exception.BadRequestException;
@@ -30,7 +32,15 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.putoi.backend.repository.EmailOTPRepositorry;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 /**
  *
@@ -50,6 +60,14 @@ public class UserService {
 
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
+    }
+
+    private String normalize(String s) {
+        if (s == null) {
+            return null;
+        }
+        String t = s.trim();
+        return t.isEmpty() ? null : t.toLowerCase();
     }
 
     @Transactional
@@ -88,7 +106,7 @@ public class UserService {
         user.setRoles(roleSet);
 
         User saved = userRepository.save(user);
-        
+
         UserResponse resp = modelMapper.map(saved, UserResponse.class);
         String firstRole = saved.getRoles() == null || saved.getRoles().isEmpty()
                 ? null
@@ -162,7 +180,85 @@ public class UserService {
 
         emailService.sendVerificationEmail(emailOTP.getEmail(), otp);
 
-        return new ApiResponse<>("00", "Success send OTP", null);
+        return new ApiResponse<>("00", "Success send OTP", null, null, null, null);
+    }
+
+//User pagination 
+    public ApiResponse<List<UserPaginationResponse>> getUsers(UserPaginationRequest req) {
+
+        int limit;
+        try {
+            limit = Integer.parseInt(req.getLimit());
+        } catch (Exception e) {
+            limit = 10;
+        } 
+        if (limit <= 0) {
+            limit = 10;
+        }
+
+        int pageClient;
+        try {
+            pageClient = Integer.parseInt(req.getPage());
+        } catch (Exception e) {
+            pageClient = 1;
+        } 
+        if (pageClient <= 0) {
+            pageClient = 1;
+        }
+        int page = pageClient - 1; 
+
+        String sortBy = (req.getSortBy() == null || req.getSortBy().isBlank()) ? "id" : req.getSortBy();
+        String sortOrder = (req.getSortOrder() == null || req.getSortOrder().isBlank()) ? "desc" : req.getSortOrder();
+        Sort.Direction dir = "asc".equalsIgnoreCase(sortOrder) ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+        PageRequest pageable = PageRequest.of(page, limit, Sort.by(dir, sortBy));
+
+        Map<String, String> f = Optional.ofNullable(req.getFilters()).orElse(Collections.emptyMap());
+        String email = normalize(f.get("email"));
+        String noHp = normalize(f.get("noHp"));
+        String nama = normalize(f.get("nama"));
+
+        Specification<User> spec = Specification.where(null);
+        if (email != null) {
+            spec = spec.and((root, q, cb)
+                    -> cb.like(cb.lower(root.get("email")), "%" + email + "%"));
+        }
+        if (noHp != null) {
+            spec = spec.and((root, q, cb)
+                    -> cb.like(cb.lower(root.get("phoneNumber")), "%" + noHp + "%"));
+        }
+        if (nama != null) {
+            spec = spec.and((root, q, cb)
+                    -> cb.like(cb.lower(root.get("name")), "%" + nama + "%"));
+        }
+
+        Page<User> pageResult = userRepository.findAll(spec, pageable);
+
+        if (pageResult.isEmpty()) {
+            throw new DataNotFoundException("data notfound");
+        }
+
+        List<UserPaginationResponse> items = pageResult.getContent().stream()
+                .map(u -> UserPaginationResponse.builder()
+                .id(u.getId())
+                .name(u.getName())
+                .email(u.getEmail())
+                .phoneNumber(u.getPhoneNumber())
+                .creatAt(u.getCreatAt())
+                .updateAt(u.getUpdateAt())
+                .roles(Optional.ofNullable(u.getRoles()).orElse(Collections.emptySet())
+                        .stream().map(r -> r.getName()).collect(Collectors.toList()))
+                .build())
+                .collect(Collectors.toList());
+
+        ApiResponse<List<UserPaginationResponse>> resp = new ApiResponse<>();
+        resp.setCode("00");
+        resp.setMessage("Success");
+        resp.setData(items);
+        resp.setPage(pageResult.getNumber() + 1); 
+        resp.setTotalPages(pageResult.getTotalPages());
+        resp.setCountData((int) pageResult.getTotalElements());
+        return resp;
     }
 
 }

@@ -7,9 +7,12 @@ package com.putoi.backend.controller;
 import com.putoi.backend.dto.ApiResponse;
 import com.putoi.backend.dto.LoginRequest;
 import com.putoi.backend.dto.LoginResponse;
+import com.putoi.backend.dto.UserPaginationRequest;
+import com.putoi.backend.dto.UserPaginationResponse;
 import com.putoi.backend.dto.UserRequest;
 import com.putoi.backend.dto.UserResponse;
 import com.putoi.backend.service.UserService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,10 +40,18 @@ public class UserController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest req) {
         return ResponseEntity.ok(userService.login(req));
     }
-    
+
     @PostMapping("/sendOTP")
-    public ResponseEntity<ApiResponse<String>> sendOTP(@RequestBody LoginRequest req){
+    public ResponseEntity<ApiResponse<String>> sendOTP(@RequestBody LoginRequest req) {
         return ResponseEntity.ok(userService.sendOTP(req));
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<ApiResponse<List<UserPaginationResponse>>> getUsers(
+            @RequestBody UserPaginationRequest request) {
+
+        ApiResponse<List<UserPaginationResponse>> response = userService.getUsers(request);
+        return ResponseEntity.ok(response);
     }
 
 }

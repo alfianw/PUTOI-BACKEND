@@ -4,8 +4,6 @@
  */
 package com.putoi.backend.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,13 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@JsonInclude(Include.NON_NULL)
-public class ApiResponse<T> {
+public class ForgotPasswordRequest {
 
-    private String code;
-    private String message;
-    private Integer page;
-    private Integer totalPages;
-    private Integer countData;
-    private T data;
+    private String email;
 }

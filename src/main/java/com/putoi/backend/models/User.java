@@ -56,12 +56,6 @@ public class User {
 
     @Column(nullable = false, name = "UPDATE_AT")
     private LocalDateTime updateAt;
-    
-//   private boolean emailVerified;
-//    
-//    private String verificationCode;
-//    
-//    private LocalDateTime verificationExpiry;
 
     @PrePersist
     protected void onCreate() {
