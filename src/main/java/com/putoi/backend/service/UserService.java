@@ -7,13 +7,20 @@ package com.putoi.backend.service;
 import com.putoi.backend.dto.ApiResponse;
 import com.putoi.backend.dto.LoginRequest;
 import com.putoi.backend.dto.LoginResponse;
+import com.putoi.backend.dto.UserDeleteRequest;
+import com.putoi.backend.dto.UserGetDetailByEmailRequest;
+import com.putoi.backend.dto.UserGetDetailByEmailResponse;
 import com.putoi.backend.dto.UserPaginationRequest;
 import com.putoi.backend.dto.UserPaginationResponse;
 import com.putoi.backend.dto.UserRequest;
 import com.putoi.backend.dto.UserResponse;
+import com.putoi.backend.dto.UserUpdatePassAndEmailRequest;
+import com.putoi.backend.dto.UserUpdateRequest;
+import com.putoi.backend.dto.UserUpdateResponse;
 import com.putoi.backend.exception.BadRequestException;
 import com.putoi.backend.exception.ConflictException;
 import com.putoi.backend.exception.DataNotFoundException;
+import com.putoi.backend.exception.UnauthorizedException;
 import com.putoi.backend.models.Role;
 import com.putoi.backend.models.User;
 import com.putoi.backend.models.EmailOTP;
@@ -41,6 +48,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
 
 /**
  *
@@ -99,8 +107,8 @@ public class UserService {
             user.setPhoneNumber("");
         }
 
-        Role defaultRole = roleRepository.findByName("MEMBER")
-                .orElseThrow(() -> new RuntimeException("MEMBER role not found"));
+        Role defaultRole = roleRepository.findByName("STUDENT")
+                .orElseThrow(() -> new RuntimeException("STUDENT role not found"));
         Set<Role> roleSet = new HashSet<>();
         roleSet.add(defaultRole);
         user.setRoles(roleSet);
@@ -191,7 +199,7 @@ public class UserService {
             limit = Integer.parseInt(req.getLimit());
         } catch (Exception e) {
             limit = 10;
-        } 
+        }
         if (limit <= 0) {
             limit = 10;
         }
@@ -201,11 +209,11 @@ public class UserService {
             pageClient = Integer.parseInt(req.getPage());
         } catch (Exception e) {
             pageClient = 1;
-        } 
+        }
         if (pageClient <= 0) {
             pageClient = 1;
         }
-        int page = pageClient - 1; 
+        int page = pageClient - 1;
 
         String sortBy = (req.getSortBy() == null || req.getSortBy().isBlank()) ? "id" : req.getSortBy();
         String sortOrder = (req.getSortOrder() == null || req.getSortOrder().isBlank()) ? "desc" : req.getSortOrder();
@@ -235,7 +243,7 @@ public class UserService {
         Page<User> pageResult = userRepository.findAll(spec, pageable);
 
         if (pageResult.isEmpty()) {
-            throw new DataNotFoundException("data notfound");
+            throw new DataNotFoundException("Data Not Found");
         }
 
         List<UserPaginationResponse> items = pageResult.getContent().stream()
@@ -255,10 +263,150 @@ public class UserService {
         resp.setCode("00");
         resp.setMessage("Success");
         resp.setData(items);
-        resp.setPage(pageResult.getNumber() + 1); 
+        resp.setPage(pageResult.getNumber() + 1);
         resp.setTotalPages(pageResult.getTotalPages());
         resp.setCountData((int) pageResult.getTotalElements());
         return resp;
+    }
+
+    public ApiResponse<UserGetDetailByEmailResponse> getDetailByEmail(UserGetDetailByEmailRequest request) {
+
+        if (isBlank(request.getEmail())) {
+            throw new BadRequestException("Email is required ");
+        }
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new DataNotFoundException("Data Not Found"));
+
+        UserGetDetailByEmailResponse response = modelMapper.map(user, UserGetDetailByEmailResponse.class);
+
+        response.setRoles(
+                Optional.ofNullable(user.getRoles())
+                        .orElse(Collections.emptySet())
+                        .stream()
+                        .map(Role::getName)
+                        .collect(Collectors.toList())
+        );
+
+        return ApiResponse.<UserGetDetailByEmailResponse>builder()
+                .code("00")
+                .message("Success")
+                .data(response)
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse<UserUpdateResponse> updateUser(UserUpdateRequest request, Authentication authentication) {
+
+        String loginEmail = authentication.getName();
+
+        User authUser = userRepository.findByEmail(loginEmail)
+                .orElseThrow(() -> new DataNotFoundException("Authenticated user not found"));
+
+        boolean isAdmin = authUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equalsIgnoreCase("ADMIN"));
+
+        User userTarget;
+        if (isAdmin && !isBlank(request.getEmail())) {
+
+            userTarget = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new DataNotFoundException("Target user not found"));
+        } else {
+
+            userTarget = authUser;
+        }
+
+        if (!isBlank(request.getName())) {
+            userTarget.setName(request.getName());
+        }
+        if (!isBlank(request.getPhoneNumber())) {
+            userTarget.setPhoneNumber(request.getPhoneNumber());
+        }
+
+        if (!isBlank(request.getRole())) {
+
+            if (!isAdmin) {
+                throw new UnauthorizedException("Only ADMIN can update roles");
+            }
+
+            if (loginEmail.equalsIgnoreCase(userTarget.getEmail())) {
+                throw new UnauthorizedException("Admin cannot update their own role");
+            }
+
+            Role newRole = roleRepository.findByName(request.getRole())
+                    .orElseThrow(() -> new DataNotFoundException("Role not found: " + request.getRole()));
+
+            userTarget.setRoles(new HashSet<>(Collections.singleton(newRole)));
+        }
+
+        userRepository.save(userTarget);
+
+        UserUpdateResponse response = modelMapper.map(userTarget, UserUpdateResponse.class);
+        response.setRoles(
+                Optional.ofNullable(userTarget.getRoles())
+                        .orElse(Collections.emptySet())
+                        .stream()
+                        .map(Role::getName)
+                        .collect(Collectors.toList())
+        );
+
+        return ApiResponse.<UserUpdateResponse>builder()
+                .code("00")
+                .message("Success Update")
+                .data(response)
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse<String> updatePasswordAndEmail(UserUpdatePassAndEmailRequest request, Authentication authentication) {
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        if (!isBlank(request.getOldPassword())) {
+            if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+                throw new BadRequestException("Old password is incorrect");
+            }
+        }
+
+        if (!isBlank(request.getNewPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        if (!isBlank(request.getEmail())) {
+            user.setEmail(request.getEmail());
+        }
+
+        userRepository.save(user);
+
+        return ApiResponse.<String>builder()
+                .code("00")
+                .message("Password or Email updated successfully, please login again")
+                .data(null)
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse<String> deleteUser(UserDeleteRequest request) {
+        
+        User targetUser = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        boolean targetIsAdmin = targetUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equalsIgnoreCase("ADMIN"));
+
+        if (targetIsAdmin) {
+            throw new UnauthorizedException("Cannot delete another ADMIN account");
+        }
+
+        userRepository.delete(targetUser);
+
+        return ApiResponse.<String>builder()
+                .code("00")
+                .message("User deleted successfully")
+                .data(null)
+                .build();
     }
 
 }

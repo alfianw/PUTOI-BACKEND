@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author alfia
  */
 @RestController
-@RequestMapping("/api/emai")
+@RequestMapping("/api/email")
 @RequiredArgsConstructor
 public class EmailController {
 
