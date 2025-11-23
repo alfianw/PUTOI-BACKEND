@@ -35,12 +35,10 @@ public class PasswordResetToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // relasi ke user (asumsi User entity ada di package yang sama)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, updatable = false)
     private User user;
 
-    // simpan SHA-256 hex string dari raw token
     @Column(name = "token_hash", nullable = false, length = 64, unique = true)
     private String tokenHash;
 

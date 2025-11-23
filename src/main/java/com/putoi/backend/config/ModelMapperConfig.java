@@ -4,6 +4,7 @@
  */
 package com.putoi.backend.config;
 
+import com.putoi.backend.models.Training;
 import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
@@ -22,7 +23,12 @@ public class ModelMapperConfig {
         ModelMapper mm = new ModelMapper();
         mm.getConfiguration()
                 .setMatchingStrategy(MatchingStrategies.STRICT)
-                .setPropertyCondition(Conditions.isNotNull()); 
+                .setPropertyCondition(Conditions.isNotNull());
+
+        mm.addConverter(ctx -> {
+            Training src = ctx.getSource();
+            return src == null ? null : src.getTrainingTitle();
+        }, Training.class, String.class);
         return mm;
     }
 }

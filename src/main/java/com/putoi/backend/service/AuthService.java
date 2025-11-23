@@ -51,7 +51,7 @@ public class AuthService {
         passwordResetTokenRepository.save(token);
 
         // kirim email
-        String resetLink = "https://yourfrontend.com/reset-password?token=" + rawToken;
+        String resetLink = "http://localhost:5173/#reset-password?token=" + rawToken;
         emailService.sendResetPasswordEmail(user.getEmail(), resetLink);
 
         return new ApiResponse<>("00", "Reset password email sent", null, null, null, null);

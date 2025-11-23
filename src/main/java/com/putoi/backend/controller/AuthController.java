@@ -5,8 +5,8 @@
 package com.putoi.backend.controller;
 
 import com.putoi.backend.dto.ApiResponse;
-import com.putoi.backend.dto.ForgotPasswordRequest;
-import com.putoi.backend.dto.ResetPasswordRequest;
+import com.putoi.backend.dto.AuthDto.ForgotPasswordRequest;
+import com.putoi.backend.dto.AuthDto.ResetPasswordRequest;
 import com.putoi.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;

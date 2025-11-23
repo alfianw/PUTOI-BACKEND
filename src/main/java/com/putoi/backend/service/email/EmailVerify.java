@@ -47,22 +47,29 @@ public class EmailVerify {
         return new ApiResponse<>("00", "Email berhasil diverifikasi", null, null, null, null);
     }
     
-    @Transactional
-    public ApiResponse<String> resendVerification(String email){
-        EmailOTP emailOTP = emailOTPRepositorry.findByEmail(email)
-                .orElseThrow(()-> new DataNotFoundException("Email tidak ditemukan: " +  email));
-        
-        if(emailOTP.isEmailVerified()){
+@Transactional
+public ApiResponse<String> resendVerification(String email) {
+    EmailOTP emailOTP = emailOTPRepositorry.findByEmail(email).orElse(null);
+
+    if (emailOTP != null) {
+        if (emailOTP.isEmailVerified()) {
             throw new BadRequestException("Email sudah diverifikasi");
         }
-        
-        String otp = String.format("%06d", new Random().nextInt(999999));
-        emailOTP.setVerificationCode(otp);
-        emailOTP.setVerificationExpiry(LocalDateTime.now().plusMinutes(10));
-        emailOTPRepositorry.save(emailOTP);
-        
-        emailService.sendVerificationEmail(emailOTP.getEmail(), otp);
-        
-        return new ApiResponse<>("00", "Kode verifikasi baru telah dikirim ke email Anda", null, null, null, null);
+    } else {
+        emailOTP = new EmailOTP();
+        emailOTP.setEmail(email);
+        emailOTP.setEmailVerified(false);
     }
+
+    String otp = String.format("%06d", new Random().nextInt(999999));
+    emailOTP.setVerificationCode(otp);
+    emailOTP.setVerificationExpiry(LocalDateTime.now().plusMinutes(10));
+
+    emailOTPRepositorry.save(emailOTP);
+
+    emailService.sendVerificationEmail(emailOTP.getEmail(), otp);
+
+    return new ApiResponse<>("00", "Kode verifikasi baru telah dikirim ke email Anda", null, null, null, null);
+}
+
 }

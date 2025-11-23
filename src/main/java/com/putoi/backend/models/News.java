@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -37,21 +38,25 @@ public class News {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, name = "TITLE")
     private String title;
 
+    @Lob
+    @Column(name = "DESCRIPTION", columnDefinition = "TEXT", nullable = false)
     private String description;
 
+    @Column(name = "AUTHOR", nullable = false)
     private String author;
 
     @Column(nullable = false, name = "CREATE_AT")
-    private LocalDateTime creatAt;
+    private LocalDateTime createdAt;
 
     @Column(nullable = false, name = "UPDATE_AT")
     private LocalDateTime updateAt;
 
     @PrePersist
     protected void onCreate() {
-        creatAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
         updateAt = LocalDateTime.now();
     }
 

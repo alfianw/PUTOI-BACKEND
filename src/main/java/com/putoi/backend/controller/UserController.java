@@ -5,18 +5,19 @@
 package com.putoi.backend.controller;
 
 import com.putoi.backend.dto.ApiResponse;
-import com.putoi.backend.dto.LoginRequest;
-import com.putoi.backend.dto.LoginResponse;
-import com.putoi.backend.dto.UserDeleteRequest;
-import com.putoi.backend.dto.UserGetDetailByEmailRequest;
-import com.putoi.backend.dto.UserGetDetailByEmailResponse;
-import com.putoi.backend.dto.UserPaginationRequest;
-import com.putoi.backend.dto.UserPaginationResponse;
-import com.putoi.backend.dto.UserRequest;
-import com.putoi.backend.dto.UserResponse;
-import com.putoi.backend.dto.UserUpdatePassAndEmailRequest;
-import com.putoi.backend.dto.UserUpdateRequest;
-import com.putoi.backend.dto.UserUpdateResponse;
+import com.putoi.backend.dto.AuthDto.LoginRequest;
+import com.putoi.backend.dto.AuthDto.LoginResponse;
+import com.putoi.backend.dto.UserDto.UserDeleteRequest;
+import com.putoi.backend.dto.UserDto.UserGetDetailByEmailRequest;
+import com.putoi.backend.dto.UserDto.UserGetDetailByEmailResponse;
+import com.putoi.backend.dto.UserDto.UserMeResponse;
+import com.putoi.backend.dto.UserDto.UserPaginationRequest;
+import com.putoi.backend.dto.UserDto.UserPaginationResponse;
+import com.putoi.backend.dto.UserDto.UserRequest;
+import com.putoi.backend.dto.UserDto.UserResponse;
+import com.putoi.backend.dto.UserDto.UserUpdatePassAndEmailRequest;
+import com.putoi.backend.dto.UserDto.UserUpdateRequest;
+import com.putoi.backend.dto.UserDto.UserUpdateResponse;
 import com.putoi.backend.service.UserService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,6 +58,7 @@ public class UserController {
         return ResponseEntity.ok(userService.sendOTP(req));
     }
 
+    @PreAuthorize("hasAuthority('superadmin')")
     @PostMapping("/user-pagination")
     public ResponseEntity<ApiResponse<List<UserPaginationResponse>>> getUsers(
             @RequestBody UserPaginationRequest request) {
@@ -79,9 +82,15 @@ public class UserController {
         return ResponseEntity.ok(userService.updatePasswordAndEmail(request, authentication));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('superadmin')")
     @DeleteMapping("/delete-user")
     public ResponseEntity<ApiResponse<String>> deleteUser(@RequestBody UserDeleteRequest request) {
         return ResponseEntity.ok(userService.deleteUser(request));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserMeResponse>> getCurrentUser(Authentication authentication) {
+        return ResponseEntity.ok(userService.getCurrentUser(authentication));
+    }
+
 }

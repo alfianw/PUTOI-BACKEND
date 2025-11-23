@@ -5,18 +5,19 @@
 package com.putoi.backend.service;
 
 import com.putoi.backend.dto.ApiResponse;
-import com.putoi.backend.dto.LoginRequest;
-import com.putoi.backend.dto.LoginResponse;
-import com.putoi.backend.dto.UserDeleteRequest;
-import com.putoi.backend.dto.UserGetDetailByEmailRequest;
-import com.putoi.backend.dto.UserGetDetailByEmailResponse;
-import com.putoi.backend.dto.UserPaginationRequest;
-import com.putoi.backend.dto.UserPaginationResponse;
-import com.putoi.backend.dto.UserRequest;
-import com.putoi.backend.dto.UserResponse;
-import com.putoi.backend.dto.UserUpdatePassAndEmailRequest;
-import com.putoi.backend.dto.UserUpdateRequest;
-import com.putoi.backend.dto.UserUpdateResponse;
+import com.putoi.backend.dto.AuthDto.LoginRequest;
+import com.putoi.backend.dto.AuthDto.LoginResponse;
+import com.putoi.backend.dto.UserDto.UserDeleteRequest;
+import com.putoi.backend.dto.UserDto.UserGetDetailByEmailRequest;
+import com.putoi.backend.dto.UserDto.UserGetDetailByEmailResponse;
+import com.putoi.backend.dto.UserDto.UserMeResponse;
+import com.putoi.backend.dto.UserDto.UserPaginationRequest;
+import com.putoi.backend.dto.UserDto.UserPaginationResponse;
+import com.putoi.backend.dto.UserDto.UserRequest;
+import com.putoi.backend.dto.UserDto.UserResponse;
+import com.putoi.backend.dto.UserDto.UserUpdatePassAndEmailRequest;
+import com.putoi.backend.dto.UserDto.UserUpdateRequest;
+import com.putoi.backend.dto.UserDto.UserUpdateResponse;
 import com.putoi.backend.exception.BadRequestException;
 import com.putoi.backend.exception.ConflictException;
 import com.putoi.backend.exception.DataNotFoundException;
@@ -39,6 +40,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.putoi.backend.repository.EmailOTPRepositorry;
+import com.putoi.backend.repository.PasswordResetTokenRepository;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +67,7 @@ public class UserService {
     private final EmailService emailService;
     private final JwtUtil jwtUtil;
     private final EmailOTPRepositorry emailOTPRepositorry;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     private boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
@@ -93,6 +96,34 @@ public class UserService {
             throw new BadRequestException("Password is required");
         }
 
+        if (isBlank(req.getCityOfResidence())) {
+            throw new BadRequestException("City of Residence is required");
+        }
+
+        if (isBlank(req.getGender())) {
+            throw new BadRequestException("Gender is required");
+        }
+
+        if (isBlank(req.getIdentityNumber())) {
+            throw new BadRequestException("Identity Number is required");
+        }
+
+        if (isBlank(req.getLastEducationField())) {
+            throw new BadRequestException("Last Education Field is required");
+        }
+
+        if (isBlank(req.getMajorStudyProgram())) {
+            throw new BadRequestException("Major Study Program is required");
+        }
+
+        if (isBlank(req.getParticipantType())) {
+            throw new BadRequestException("Participant Type is required");
+        }
+
+        if (isBlank(req.getUniversityName())) {
+            throw new BadRequestException("University Name is required");
+        }
+
         String normalizedEmail = req.getEmail().trim().toLowerCase(Locale.ROOT);
 
         if (userRepository.existsByEmail(normalizedEmail)) {
@@ -107,19 +138,21 @@ public class UserService {
             user.setPhoneNumber("");
         }
 
-        Role defaultRole = roleRepository.findByName("STUDENT")
-                .orElseThrow(() -> new RuntimeException("STUDENT role not found"));
+        Role defaultRole = roleRepository.findByName("student")
+                .orElseThrow(() -> new RuntimeException("student role not found"));
         Set<Role> roleSet = new HashSet<>();
         roleSet.add(defaultRole);
         user.setRoles(roleSet);
 
         User saved = userRepository.save(user);
+        String token = jwtUtil.generateToken(user);
 
         UserResponse resp = modelMapper.map(saved, UserResponse.class);
         String firstRole = saved.getRoles() == null || saved.getRoles().isEmpty()
                 ? null
                 : saved.getRoles().iterator().next().getName();
         resp.setRole(firstRole);
+        resp.setToken(token);
 
         return ApiResponse.<UserResponse>builder()
                 .code("00")
@@ -147,6 +180,12 @@ public class UserService {
         String token = jwtUtil.generateToken(user);
 
         LoginResponse response = modelMapper.map(user, LoginResponse.class);
+        response.setRoles(
+                Optional.ofNullable(user.getRoles())
+                        .filter(roles -> !roles.isEmpty())
+                        .map(roles -> roles.iterator().next().getName())
+                        .orElse(null)
+        );
         response.setToken(token);
         response.setDateTime(LocalDateTime.now());
 
@@ -171,17 +210,18 @@ public class UserService {
 
         if (maybeOtp.isPresent()) {
             emailOTP = maybeOtp.get();
+            // Reset emailVerified jika sebelumnya sudah true
             if (Boolean.TRUE.equals(emailOTP.isEmailVerified())) {
-                throw new BadRequestException("Email already exists");
+                emailOTP.setEmailVerified(false);
             }
         } else {
             emailOTP = new EmailOTP();
             emailOTP.setEmail(normalizedEmail);
         }
 
+        // Generate OTP baru
         String otp = String.format("%06d", new Random().nextInt(999999));
         emailOTP.setEmail(normalizedEmail);
-        emailOTP.setEmailVerified(false);
         emailOTP.setVerificationCode(otp);
         emailOTP.setVerificationExpiry(LocalDateTime.now().plusMinutes(10));
         emailOTPRepositorry.save(emailOTP);
@@ -191,7 +231,6 @@ public class UserService {
         return new ApiResponse<>("00", "Success send OTP", null, null, null, null);
     }
 
-//User pagination 
     public ApiResponse<List<UserPaginationResponse>> getUsers(UserPaginationRequest req) {
 
         int limit;
@@ -252,10 +291,19 @@ public class UserService {
                 .name(u.getName())
                 .email(u.getEmail())
                 .phoneNumber(u.getPhoneNumber())
-                .creatAt(u.getCreatAt())
+                .createdAt(u.getCreatedAt())
                 .updateAt(u.getUpdateAt())
-                .roles(Optional.ofNullable(u.getRoles()).orElse(Collections.emptySet())
-                        .stream().map(r -> r.getName()).collect(Collectors.toList()))
+                .role(Optional.ofNullable(u.getRoles())
+                        .filter(roles -> !roles.isEmpty())
+                        .map(roles -> roles.iterator().next().getName())
+                        .orElse(null))
+                .cityOfResidence(u.getCityOfResidence())
+                .gender(u.getGender())
+                .identityNumber(u.getIdentityNumber())
+                .lastEducationField(u.getLastEducationField())
+                .majorStudyProgram(u.getMajorStudyProgram())
+                .participantType(u.getParticipantType())
+                .universityName(u.getUniversityName())
                 .build())
                 .collect(Collectors.toList());
 
@@ -280,12 +328,11 @@ public class UserService {
 
         UserGetDetailByEmailResponse response = modelMapper.map(user, UserGetDetailByEmailResponse.class);
 
-        response.setRoles(
+        response.setRole(
                 Optional.ofNullable(user.getRoles())
-                        .orElse(Collections.emptySet())
-                        .stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toList())
+                        .filter(roles -> !roles.isEmpty())
+                        .map(roles -> roles.iterator().next().getName())
+                        .orElse(null)
         );
 
         return ApiResponse.<UserGetDetailByEmailResponse>builder()
@@ -304,7 +351,7 @@ public class UserService {
                 .orElseThrow(() -> new DataNotFoundException("Authenticated user not found"));
 
         boolean isAdmin = authUser.getRoles().stream()
-                .anyMatch(role -> role.getName().equalsIgnoreCase("ADMIN"));
+                .anyMatch(role -> role.getName().equalsIgnoreCase("superadmin"));
 
         User userTarget;
         if (isAdmin && !isBlank(request.getEmail())) {
@@ -323,14 +370,42 @@ public class UserService {
             userTarget.setPhoneNumber(request.getPhoneNumber());
         }
 
+        if (!isBlank(request.getCityOfResidence())) {
+            userTarget.setCityOfResidence(request.getCityOfResidence());
+        }
+
+        if (!isBlank(request.getGender())) {
+            userTarget.setGender(request.getGender());
+        }
+
+        if (!isBlank(request.getIdentityNumber())) {
+            userTarget.setIdentityNumber(request.getIdentityNumber());
+        }
+
+        if (!isBlank(request.getLastEducationField())) {
+            userTarget.setLastEducationField(request.getLastEducationField());
+        }
+
+        if (!isBlank(request.getMajorStudyProgram())) {
+            userTarget.setMajorStudyProgram(request.getMajorStudyProgram());
+        }
+
+        if (!isBlank(request.getParticipantType())) {
+            userTarget.setParticipantType(request.getParticipantType());
+        }
+
+        if (!isBlank(request.getUniversityName())) {
+            userTarget.setUniversityName(request.getUniversityName());
+        }
+
         if (!isBlank(request.getRole())) {
 
             if (!isAdmin) {
-                throw new UnauthorizedException("Only ADMIN can update roles");
+                throw new UnauthorizedException("Only superadmin can update roles");
             }
 
             if (loginEmail.equalsIgnoreCase(userTarget.getEmail())) {
-                throw new UnauthorizedException("Admin cannot update their own role");
+                throw new UnauthorizedException("superadmin cannot update their own role");
             }
 
             Role newRole = roleRepository.findByName(request.getRole())
@@ -342,12 +417,11 @@ public class UserService {
         userRepository.save(userTarget);
 
         UserUpdateResponse response = modelMapper.map(userTarget, UserUpdateResponse.class);
-        response.setRoles(
+        response.setRole(
                 Optional.ofNullable(userTarget.getRoles())
-                        .orElse(Collections.emptySet())
-                        .stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toList())
+                        .filter(roles -> !roles.isEmpty())
+                        .map(roles -> roles.iterator().next().getName())
+                        .orElse(null)
         );
 
         return ApiResponse.<UserUpdateResponse>builder()
@@ -389,23 +463,56 @@ public class UserService {
 
     @Transactional
     public ApiResponse<String> deleteUser(UserDeleteRequest request) {
-        
+
+        // Cari user berdasarkan email
         User targetUser = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new DataNotFoundException("User not found"));
 
+        // Cek apakah target adalah superadmin
         boolean targetIsAdmin = targetUser.getRoles().stream()
-                .anyMatch(role -> role.getName().equalsIgnoreCase("ADMIN"));
+                .anyMatch(role -> role.getName().equalsIgnoreCase("superadmin"));
 
         if (targetIsAdmin) {
-            throw new UnauthorizedException("Cannot delete another ADMIN account");
+            throw new UnauthorizedException("Cannot delete another superadmin account");
         }
 
+        // Hapus semua password reset token terkait user
+        passwordResetTokenRepository.deleteByUser(targetUser);
+
+        // Hapus user (Hibernate akan otomatis hapus user_roles, news, products, trainings karena cascade + orphanRemoval)
         userRepository.delete(targetUser);
 
         return ApiResponse.<String>builder()
                 .code("00")
                 .message("User deleted successfully")
                 .data(null)
+                .build();
+    }
+
+    public ApiResponse<UserMeResponse> getCurrentUser(Authentication authentication) {
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        UserMeResponse response = UserMeResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+
+        response.setRoles(
+                Optional.ofNullable(user.getRoles())
+                        .filter(roles -> !roles.isEmpty())
+                        .map(roles -> roles.iterator().next().getName())
+                        .orElse(null)
+        );
+
+        return ApiResponse.<UserMeResponse>builder()
+                .code("00")
+                .message("Success")
+                .data(response)
                 .build();
     }
 

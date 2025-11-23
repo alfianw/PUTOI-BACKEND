@@ -53,15 +53,36 @@ public class User {
     @Column(nullable = false, name = "PHONE_NUMBER")
     private String phoneNumber;
 
+    @Column(nullable = false, name = "PARTICIPANT_TYPE")
+    private String participantType;
+
+    @Column(nullable = false, name = "IDENTITY_NUMBER")
+    private String identityNumber;
+
+    @Column(nullable = false)
+    private String gender;
+
+    @Column(nullable = false, name = "UNIVERSITY_NAME")
+    private String universityName;
+
+    @Column(nullable = false, name = "LAST_EDUCATION_FIELD")
+    private String lastEducationField;
+
+    @Column(nullable = false, name = "MAJOR_STUDY_PROGRAM")
+    private String majorStudyProgram;
+
+    @Column(nullable = false, name = "CITY_OF_RESIDENCE")
+    private String cityOfResidence;
+
     @Column(nullable = false, name = "CREATE_AT")
-    private LocalDateTime creatAt;
+    private LocalDateTime createdAt;
 
     @Column(nullable = false, name = "UPDATE_AT")
     private LocalDateTime updateAt;
 
     @PrePersist
     protected void onCreate() {
-        creatAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now();
         updateAt = LocalDateTime.now();
     }
 
@@ -80,4 +101,10 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<News> newsList;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<Product> products;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<Training> trainings;
 }
