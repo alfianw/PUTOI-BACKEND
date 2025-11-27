@@ -7,6 +7,8 @@ package com.putoi.backend.controller;
 import com.putoi.backend.dto.ApiResponse;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipanRequest;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipanResponse;
+import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsCheckRequest;
+import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsCheckResponse;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsDeleteRequest;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsDetailRequest;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsDetailResponse;
@@ -66,5 +68,10 @@ public class TrainingParticipantsController {
     @DeleteMapping("/delete")
     public ResponseEntity<ApiResponse<String>> deleteTrainingParticipants(@RequestBody TrainingParticipantsDeleteRequest request) {
         return ResponseEntity.ok(trainingPatricipantsService.deleteTrainingParticipants(request));
+    }
+    
+    @PostMapping("/check")
+    public ResponseEntity<ApiResponse<TrainingParticipantsCheckResponse>> check(@RequestBody TrainingParticipantsCheckRequest request,  Authentication authentication){
+        return ResponseEntity.ok(trainingPatricipantsService.checkRegistered(request, authentication));
     }
 }

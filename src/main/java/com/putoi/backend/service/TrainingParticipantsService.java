@@ -7,6 +7,8 @@ package com.putoi.backend.service;
 import com.putoi.backend.dto.ApiResponse;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipanRequest;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipanResponse;
+import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsCheckRequest;
+import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsCheckResponse;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsDeleteRequest;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsDetailRequest;
 import com.putoi.backend.dto.TraningParticipanDto.TrainingParticipantsDetailResponse;
@@ -255,4 +257,30 @@ public class TrainingParticipantsService {
                 .data(null)
                 .build();
     }
+
+    public ApiResponse<TrainingParticipantsCheckResponse> checkRegistered(
+            TrainingParticipantsCheckRequest request,
+            Authentication authentication
+    ) {
+
+        if (request.getTrainingId() == null) {
+            throw new BadRequestException("Training Id is required");
+        }
+
+        String email = authentication.getName();
+
+        boolean registered = trainingPatrticipantsRepository
+                .existsByEmailAndTraining_Id(email, request.getTrainingId());
+
+        // bungkus ke DTO response
+        TrainingParticipantsCheckResponse response = new TrainingParticipantsCheckResponse();
+        response.setRegistered(registered);
+
+        return ApiResponse.<TrainingParticipantsCheckResponse>builder()
+                .code("00")
+                .message("Success")
+                .data(response)
+                .build();
+    }
+
 }
