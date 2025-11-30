@@ -14,6 +14,7 @@ import com.putoi.backend.service.email.TokenUtils;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,9 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.reset-password.url}")
+    private String resetPasswordUrl;
 
     @Transactional
     public ApiResponse<String> sendResetPasswordEmail(String email) {
@@ -51,7 +55,7 @@ public class AuthService {
         passwordResetTokenRepository.save(token);
 
         // kirim email
-        String resetLink = "http://localhost:5173/#reset-password?token=" + rawToken;
+        String resetLink = resetPasswordUrl + "?token=" + rawToken;
         emailService.sendResetPasswordEmail(user.getEmail(), resetLink);
 
         return new ApiResponse<>("00", "Reset password email sent", null, null, null, null);

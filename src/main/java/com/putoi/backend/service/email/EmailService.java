@@ -28,9 +28,13 @@ public class EmailService {
     }
 
     public void sendVerificationEmail(String to, String otp) {
-        String subject = "Verifikasi Email Anda";
+        String subject = "Verifikasi Email Akun Putoi";
         String body = String.format(
-                "Halo,\n\nTerima kasih telah mendaftar. Kode verifikasi email Anda adalah: %s\n\nKode ini berlaku selama 10 menit.",
+                "Halo,\n\nTerima kasih telah mendaftar di Putoi.\n\n"
+                + "Untuk menyelesaikan proses pendaftaran, silakan masukkan kode verifikasi berikut:\n\n"
+                + "Kode Verifikasi: %s\n\n"
+                + "Kode ini berlaku selama 10 menit. Jika Anda tidak melakukan pendaftaran, abaikan email ini.\n\n"
+                + "Terima kasih,\nTim Putoi",
                 otp
         );
 
@@ -38,11 +42,12 @@ public class EmailService {
     }
 
     public void sendResetPasswordEmail(String to, String resetLink) {
-        String subject = "Reset Password";
+        String subject = "Permintaan Reset Password Putoi";
         String body = String.format(
-                "Halo,\n\nKami menerima permintaan untuk mereset password akun Anda. "
-                + "Klik tautan berikut untuk mengganti password (masa berlaku 1 jam):\n\n%s\n\n"
-                + "Jika Anda tidak meminta ini, abaikan email ini.\n\nSalam,\nTim Anda",
+                "Halo,\n\nKami menerima permintaan untuk mereset password akun Putoi Anda.\n\n"
+                + "Silakan klik tautan berikut untuk mengganti password Anda:\n%s\n\n"
+                + "Tautan ini berlaku selama 1 jam. Jika Anda tidak meminta reset password ini, harap abaikan email ini.\n\n"
+                + "Terima kasih,\nTim Putoi",
                 resetLink
         );
 
@@ -50,12 +55,14 @@ public class EmailService {
     }
 
     public void sendPasswordChangedNotification(String to, String name) {
-        String subject = "Password Berhasil Diubah";
+        String subject = "Pemberitahuan: Password Berhasil Diubah";
         String body = String.format(
-                "Halo %s,\n\nPassword akun Anda telah berhasil diubah.\n"
-                + "Jika bukan Anda yang melakukan perubahan ini, segera hubungi tim support.\n\nSalam,\nTim Anda",
+                "Halo %s,\n\nKami ingin memberitahukan bahwa password akun Putoi Anda telah berhasil diperbarui.\n\n"
+                + "Jika Anda tidak melakukan perubahan ini, segera hubungi tim support kami untuk memastikan keamanan akun Anda.\n\n"
+                + "Terima kasih,\nTim Putoi",
                 name
         );
+
         sendEmail(to, subject, body);
     }
 }
