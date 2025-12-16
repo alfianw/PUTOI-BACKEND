@@ -96,7 +96,7 @@ public class TrainingParticipantsService {
         trainingParticipants.setUniversityName(user.getUniversityName());
         trainingParticipants.setEmail(user.getEmail());
         trainingParticipants.setPhoneNumber(user.getPhoneNumber());
-        trainingParticipants.setStatus("REGISTERED");
+        trainingParticipants.setStatus("Terdaftar");
         trainingParticipants.setTraining(training);
 
         try {
