@@ -194,6 +194,7 @@ public class TrainingService {
                 .trainingFee(u.getTrainingFee())
                 .trainingMaterials(u.getTrainingMaterials())
                 .updateAt(u.getUpdateAt())
+                .totalParticipants(u.getTotalParticipants())
                 .build())
                 .collect(Collectors.toList());
         

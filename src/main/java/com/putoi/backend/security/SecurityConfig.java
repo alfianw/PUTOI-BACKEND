@@ -33,6 +33,9 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String[] allowedOrigins;
 
+    @Value("${file.upload.news-image-public-path}")
+    private String newsImagePublicPath;
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
@@ -55,6 +58,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/product/detail").permitAll()
                 .requestMatchers("/api/training/pagination").permitAll()
                 .requestMatchers("/api/training/detail").permitAll()
+                .requestMatchers(newsImagePublicPath + "**").permitAll()
                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

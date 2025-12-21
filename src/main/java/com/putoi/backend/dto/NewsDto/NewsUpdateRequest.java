@@ -4,6 +4,7 @@
  */
 package com.putoi.backend.dto.NewsDto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,8 +21,10 @@ import lombok.NoArgsConstructor;
 public class NewsUpdateRequest {
 
     private Long id;
-    
+
     private String title;
 
     private String description;
+
+    private List<ImageUpdateRequest> images;
 }

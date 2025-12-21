@@ -4,7 +4,6 @@
  */
 package com.putoi.backend.models;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -12,14 +11,11 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,22 +30,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "NEWS")
-public class News {
+@Table(name = "NEWS_IMAGES")
+public class NewsImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, name = "TITLE")
-    private String title;
+    @Column(name = "IMAGE_NAME", nullable = false)
+    private String imageName;
 
-    @Lob
-    @Column(name = "DESCRIPTION", columnDefinition = "TEXT", nullable = false)
-    private String description;
-
-    @Column(name = "AUTHOR", nullable = false)
-    private String author;
+    @Column(name = "IMAGE_PATH", nullable = false)
+    private String imagePath;
 
     @Column(nullable = false, name = "CREATE_AT")
     private LocalDateTime createdAt;
@@ -69,14 +61,6 @@ public class News {
     }
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @OneToMany(
-            mappedBy = "news",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true,
-            fetch = FetchType.LAZY
-    )
-    private List<NewsImage> images;
+    @JoinColumn(name = "news_id", nullable = false)
+    private News news;
 }

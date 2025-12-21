@@ -4,34 +4,23 @@
  */
 package com.putoi.backend.dto.NewsDto;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
  * @author alfia
  */
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 @Builder
-public class NewsDetailResponse {
+public class ImageUpdateRequest {
 
-    private Long id;
-
-    private String title;
-
-    private String description;
-
-    private String author;
-
-    private List<NewsImageDetailResponse> images;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updateAt;
+    private Long imageId;
+    private MultipartFile file;
+    private Boolean hasFile;
 }

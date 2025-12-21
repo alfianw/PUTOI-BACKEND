@@ -46,6 +46,8 @@ public class TrainingPaginationResponse {
     private String trainingFee;
 
     private String author;
+    
+    private String totalParticipants;
 
     private LocalDateTime createdAt;
 

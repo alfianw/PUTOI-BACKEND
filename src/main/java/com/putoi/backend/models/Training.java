@@ -78,7 +78,7 @@ public class Training {
 
     @Column(name = "training_fee")
     private String trainingFee;
-    
+
     @Column(name = "AUTHOR", nullable = false)
     private String author;
 
@@ -88,10 +88,17 @@ public class Training {
     @Column(nullable = false, name = "UPDATE_AT")
     private LocalDateTime updateAt;
 
+    @Column(name = "total_participants", nullable = false)
+    @Builder.Default
+    private String totalParticipants = "0";
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updateAt = LocalDateTime.now();
+        if (totalParticipants == null) {
+            totalParticipants = "0";
+        }
     }
 
     @PreUpdate

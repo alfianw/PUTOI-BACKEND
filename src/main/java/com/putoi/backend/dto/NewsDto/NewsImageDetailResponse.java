@@ -4,8 +4,6 @@
  */
 package com.putoi.backend.dto.NewsDto;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,19 +17,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class NewsDetailResponse {
+public class NewsImageDetailResponse {
 
-    private Long id;
-
-    private String title;
-
-    private String description;
-
-    private String author;
-
-    private List<NewsImageDetailResponse> images;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updateAt;
+    private Long id;         
+    private String imageName; 
+    private String imagePath;
 }

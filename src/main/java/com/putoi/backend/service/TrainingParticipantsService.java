@@ -25,6 +25,8 @@ import com.putoi.backend.models.User;
 import com.putoi.backend.repository.TrainingPatrticipantsRepository;
 import com.putoi.backend.repository.TrainingRepository;
 import com.putoi.backend.repository.UserRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.transaction.Transactional;
 import java.util.Collections;
 import java.util.List;
@@ -81,6 +83,12 @@ public class TrainingParticipantsService {
         Training training = trainingRepository.findById(request.getTrainingId())
                 .orElseThrow(() -> new DataNotFoundException("Data Not Found"));
 
+        int totalParticipants = Integer.parseInt(training.getTotalParticipants());
+        int minimumParticipants = Integer.parseInt(training.getMinimumParticipants());
+
+        if (totalParticipants >= minimumParticipants) {
+            throw new ConflictException("The participant quota is full");
+        }
         boolean alreadyRegistered = trainingPatrticipantsRepository
                 .existsByEmailAndTraining_Id(user.getEmail(), training.getId());
         if (alreadyRegistered) {
@@ -98,6 +106,13 @@ public class TrainingParticipantsService {
         trainingParticipants.setPhoneNumber(user.getPhoneNumber());
         trainingParticipants.setStatus("Terdaftar");
         trainingParticipants.setTraining(training);
+
+        trainingPatrticipantsRepository.save(trainingParticipants);
+
+        training.setTotalParticipants(
+                String.valueOf(totalParticipants + 1)
+        );
+        trainingRepository.save(training);
 
         try {
             trainingPatrticipantsRepository.save(trainingParticipants);
@@ -159,6 +174,7 @@ public class TrainingParticipantsService {
         Map<String, String> f = Optional.ofNullable(request.getFilters()).orElse(Collections.emptyMap());
         String name = normalize(f.get("name"));
         String email = normalize(f.get("author"));
+        String trainingName = normalize(f.get("training"));
 
         Specification<TrainingParticipants> spec = Specification.where(null);
         if (name != null) {
@@ -169,6 +185,17 @@ public class TrainingParticipantsService {
             spec = spec.and((root, q, cb)
                     -> cb.like(cb.lower(root.get("email")), "%" + email + "%"));
         }
+
+        if (trainingName != null) {
+            spec = spec.and((root, q, cb) -> {
+                Join<Object, Object> trainingJoin = root.join("training", JoinType.LEFT);
+                return cb.like(
+                        cb.lower(trainingJoin.get("trainingTitle")),
+                        "%" + trainingName + "%"
+                );
+            });
+        }
+
         Page<TrainingParticipants> pageResult = trainingPatrticipantsRepository.findAll(spec, pageable);
 
         if (pageResult.isEmpty()) {
