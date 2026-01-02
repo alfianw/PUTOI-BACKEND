@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  *
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     @ExceptionHandler(DataNotFoundException.class)
     public ResponseEntity<ApiResponse<?>> handleDataNotFound(DataNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -45,6 +46,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<?>> handleForbidden(ForbiddenException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ApiResponse<>("403", e.getMessage(), null, null, null, null));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<?>> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException e) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(
+                        "413", "Ukuran file terlalu besar. Maksimal ukuran upload terlampaui", null, null, null, null));
     }
 
     @ExceptionHandler(Exception.class)

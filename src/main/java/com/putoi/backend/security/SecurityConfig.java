@@ -37,7 +37,7 @@ public class SecurityConfig {
     private String newsImagePublicPath;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

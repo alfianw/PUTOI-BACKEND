@@ -10,6 +10,7 @@ import com.putoi.backend.dto.NewsDto.ImageUpdateRequest;
 import com.putoi.backend.dto.NewsDto.NewsDeleteRequest;
 import com.putoi.backend.dto.NewsDto.NewsDetailRequest;
 import com.putoi.backend.dto.NewsDto.NewsDetailResponse;
+import com.putoi.backend.dto.NewsDto.NewsImageDeleteRequest;
 import com.putoi.backend.dto.NewsDto.NewsPaginationRequest;
 import com.putoi.backend.dto.NewsDto.NewsPaginationResponse;
 import com.putoi.backend.dto.NewsDto.NewsRequest;
@@ -110,6 +111,14 @@ public class NewsController {
     @DeleteMapping("/delete")
     public ResponseEntity<ApiResponse<String>> deleteNews(@RequestBody NewsDeleteRequest request) {
         return ResponseEntity.ok(newsService.deleteNews(request));
+    }
+
+    @PostMapping("/image/delete")
+    public ApiResponse<String> deleteNewsImage(
+            @RequestBody NewsImageDeleteRequest request,
+            Authentication authentication
+    ) {
+        return newsService.deleteNewsImage(request, authentication);
     }
 
 }

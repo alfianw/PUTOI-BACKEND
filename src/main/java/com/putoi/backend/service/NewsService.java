@@ -9,6 +9,7 @@ import com.putoi.backend.dto.NewsDto.ImageUpdateRequest;
 import com.putoi.backend.dto.NewsDto.NewsDeleteRequest;
 import com.putoi.backend.dto.NewsDto.NewsDetailRequest;
 import com.putoi.backend.dto.NewsDto.NewsDetailResponse;
+import com.putoi.backend.dto.NewsDto.NewsImageDeleteRequest;
 import com.putoi.backend.dto.NewsDto.NewsImageDetailResponse;
 import com.putoi.backend.dto.NewsDto.NewsPaginationRequest;
 import com.putoi.backend.dto.NewsDto.NewsPaginationResponse;
@@ -281,7 +282,6 @@ public class NewsService {
         }
         news.setAuthor(user.getName());
 
-
         // Update / tambah images
         if (request.getImages() != null && !request.getImages().isEmpty()) {
 // buat map existing images
@@ -395,6 +395,45 @@ public class NewsService {
         return ApiResponse.<String>builder()
                 .code("00")
                 .message("Success Delete")
+                .data(null)
+                .build();
+    }
+
+    @Transactional
+    public ApiResponse<String> deleteNewsImage(
+            NewsImageDeleteRequest request,
+            Authentication authentication
+    ) {
+        if (request.getImageId() == null) {
+            throw new BadRequestException("ImageId is required");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+
+        NewsImage image = newsImageRepository.findById(request.getImageId())
+                .orElseThrow(() -> new DataNotFoundException("Image not found"));
+
+        News news = image.getNews();
+
+        if (!news.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException("Unauthorized delete image");
+        }
+
+        try {
+            Path path = Paths.get(newsImageUploadDir, image.getImageName());
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete image file", e);
+        }
+
+        news.getImages().removeIf(img -> img.getId().equals(image.getId()));
+
+        newsRepository.save(news);
+
+        return ApiResponse.<String>builder()
+                .code("00")
+                .message("Success delete image")
                 .data(null)
                 .build();
     }
